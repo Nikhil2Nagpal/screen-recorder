@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screen Recorder with Front Camera and Sound</title>
+  <style>
+    #startBtn {
+      background-color: red;
+      color: white;
+      padding: 10px 20px;
+      cursor: pointer;
+      border: none;
+      margin-right: 10px;
+    }
+
+    #stopBtn {
+      background-color: grey;
+      color: white;
+      padding: 10px 20px;
+      cursor: pointer;
+      border: none;
+    }
+
+    video {
+      height: 580px;
+      width: 100%;
+    }
+
+    .bb {
+      display: flex;
+      justify-content: center;
+      /* Centers horizontally */
+      align-items: center;
+      /* Centers vertically */
+
+      /* Full height to center vertically */
+      width: 100%;
+      /* Full width to center horizontally */
+      background-color: #f0f0f0;
+      /* Optional background */
+    }
+
+    /* Style for buttons */
+    .bb button {
+      margin: 0 10px;
+      /* Space between buttons */
+      padding: 10px 20px;
+      border-radius: 10px;
+      /* Button padding */
+      font-size: 16px;
+      /* Button text size */
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+
+  <h3>Recording & Preview:</h3>
+  <video id="recordedVideo" autoplay playsinline muted controls></video>
+  <div class="bb">
+    <button id="startBtn">Start Recording</button>
+    <button id="stopBtn" disabled>Stop Recording</button>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let combinedStream;
+    let data = [];
+
+    const startRecording = async () => {
+      // Capture screen stream
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          mediaSource: "screen"
+        }
+      });
+
+      // Capture front camera and microphone stream (audio: true for sound)
+      const cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true // This enables sound recording from the microphone
+      });
+
+      // Show the front camera feed in the video element during recording
+      document.getElementById('recordedVideo').srcObject = cameraStream;
+
+      // Combine both streams (screen + camera with sound)
+      combinedStream = new MediaStream([
+        ...screenStream.getTracks(), // Screen video
+        ...cameraStream.getTracks()  // Camera video and microphone audio
+      ]);
+
+      // Start recording the combined stream
+      mediaRecorder = new MediaRecorder(combinedStream);
+      mediaRecorder.ondataavailable = (e) => {
+        data.push(e.data);
+      };
+
+      mediaRecorder.start();
+
+      // Enable stop button and disable start button
+      document.getElementById("startBtn").disabled = true;
+      document.getElementById("stopBtn").disabled = false;
+    };
+
+    const stopRecording = () => {
+      mediaRecorder.stop();
+
+      // Stop all tracks from the streams (screen, camera, and microphone)
+      combinedStream.getTracks().forEach(track => track.stop());
+
+      mediaRecorder.onstop = () => {
+        // Show the recorded video with sound in the same video element
+        const videoElement = document.getElementById("recordedVideo");
+        videoElement.srcObject = null; // Remove live camera feed
+        videoElement.src = URL.createObjectURL(new Blob(data, { type: data[0].type }));
+
+        // Reset buttons
+        document.getElementById("startBtn").disabled = false;
+        document.getElementById("stopBtn").disabled = true;
+        data = []; // Reset data for the next recording
+      };
+    };
+
+    // Event listeners for buttons
+    document.getElementById("startBtn").addEventListener("click", startRecording);
+    document.getElementById("stopBtn").addEventListener("click", stopRecording);
+  </script>
+</body>
+
+</html>

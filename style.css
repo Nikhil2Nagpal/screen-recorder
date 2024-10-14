@@ -1,0 +1,16 @@
+#startBtn {
+  background-color: red;
+  color: white;
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  margin-right: 10px;
+}
+#stopBtn {
+  background-color: grey;
+  color: white;
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+}
+
